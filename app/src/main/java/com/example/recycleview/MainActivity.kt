@@ -1,47 +1,86 @@
 package com.example.recycleview
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.recycleview.ui.theme.RecycleViewTheme
+import android.os.Handler
+import android.os.Looper
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private val orders = mutableListOf<Order>()
+    private lateinit var adapter: OrderAdapter
+    private var isLoading = false
+    private var currentPage = 1
+    private val pageSize = 20
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            RecycleViewTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+        setContentView(R.layout.activity_main)
+
+        recyclerView = findViewById(R.id.recyclerView)
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
+        adapter = OrderAdapter(orders)
+
+        recyclerView.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        swipeRefreshLayout.setOnRefreshListener {
+            refreshOrders()
+        }
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(1) && !isLoading) {
+                    loadMoreOrders()
                 }
             }
+        })
+
+        loadMoreOrders()
+    }
+
+    private fun loadMoreOrders() {
+        isLoading = true
+        // Simulate network delay
+        Handler(Looper.getMainLooper()).postDelayed({
+            val newOrders = generateFakeOrders(currentPage, pageSize)
+            adapter.addOrders(newOrders)
+            currentPage++
+            isLoading = false
+        }, 1500)
+    }
+
+    private fun refreshOrders() {
+        isLoading = true
+        currentPage = 1
+        // Simulate network delay
+        Handler(Looper.getMainLooper()).postDelayed({
+            orders.clear()
+            val newOrders = generateFakeOrders(currentPage, pageSize)
+            adapter.clearOrders()
+            adapter.addOrders(newOrders)
+            swipeRefreshLayout.isRefreshing = false
+            isLoading = false
+        }, 1500)
+    }
+
+    private fun generateFakeOrders(page: Int, size: Int): List<Order> {
+        val fakeOrders = mutableListOf<Order>()
+        val start = (page - 1) * size + 1
+        val end = start + size - 1
+        for (i in start..end) {
+            fakeOrders.add(Order("Order $i", "Details for order $i", "Status $i"))
         }
+        return fakeOrders
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RecycleViewTheme {
-        Greeting("Android")
-    }
-}
+
+
+
