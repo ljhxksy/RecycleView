@@ -23,4 +23,11 @@
         android:layout_height="wrap_content"
         android:text="Order Status" />
 
+    <View
+        android:layout_marginTop="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@android:color/secondary_text_dark"/>
+
 </LinearLayout>

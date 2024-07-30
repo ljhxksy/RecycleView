@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     private var isLoading = false
     private var currentPage = 1
     private val pageSize = 20 // Number of orders per list
+    private val threshold = 10
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,10 +39,13 @@ class MainActivity : AppCompatActivity() {
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val totalItemCount = layoutManager.itemCount
+                val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
 
-                // Load orders if the recycler view cannot scroll anymore and is not currently loading
-                // There was a better one during class but I totally forgot what that was like lmao
-                if (!recyclerView.canScrollVertically(1) && !isLoading) {
+                // Load orders if the recycler view is not currently loading and the total item count
+                // is less than or equal to the last visible item position + the threshold (10)
+                if (!isLoading && totalItemCount <= (lastVisibleItemPosition + threshold)) {
                     loadMoreOrders()
                 }
             }
