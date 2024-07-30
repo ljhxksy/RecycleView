@@ -15,12 +15,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: OrderAdapter
     private var isLoading = false
     private var currentPage = 1
-    private val pageSize = 20
+    private val pageSize = 20 // Number of orders per list
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Initialize recyclerView and swipeRefreshLayout
         recyclerView = findViewById(R.id.recyclerView)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         adapter = OrderAdapter(orders)
@@ -28,40 +29,57 @@ class MainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
+        // Setting up the swipe-to-refresh listener
         swipeRefreshLayout.setOnRefreshListener {
             refreshOrders()
         }
 
+        // Add a scroll listener to the RecyclerView to implement load more orders
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
+
+                // Load orders if the recycler view cannot scroll anymore and is not currently loading
+                // There was a better one during class but I totally forgot what that was like lmao
                 if (!recyclerView.canScrollVertically(1) && !isLoading) {
                     loadMoreOrders()
                 }
             }
         })
 
+        // Load initial orders
         loadMoreOrders()
     }
 
+    // Treating each load of orders as a "page", each time loadMoreOrders is called,
+    // a new "page" of orders is loaded and added to the existing list in the RecyclerView
+
+    // Is called when the user scrolls to the bottom of the list and more items need to be loaded
     private fun loadMoreOrders() {
         isLoading = true
         // Simulate network delay
         Handler(Looper.getMainLooper()).postDelayed({
-            val newOrders = generateFakeOrders(currentPage, pageSize)
+            // Clear the current list and load new orders
+            val newOrders = generateOrders(currentPage, pageSize)
             adapter.addOrders(newOrders)
+            // Increment the current page number for the next load
             currentPage++
             isLoading = false
         }, 1500)
     }
 
+    // Refresh the entire order list when user carries out a pull-to-refresh gesture
     private fun refreshOrders() {
         isLoading = true
+
+        //Reset currentPage to 1 to start loading from the first page
         currentPage = 1
+
         // Simulate network delay
         Handler(Looper.getMainLooper()).postDelayed({
+            // Clear the existing list of orders
             orders.clear()
-            val newOrders = generateFakeOrders(currentPage, pageSize)
+            val newOrders = generateOrders(currentPage, pageSize)
             adapter.clearOrders()
             adapter.addOrders(newOrders)
             swipeRefreshLayout.isRefreshing = false
@@ -69,14 +87,21 @@ class MainActivity : AppCompatActivity() {
         }, 1500)
     }
 
-    private fun generateFakeOrders(page: Int, size: Int): List<Order> {
-        val fakeOrders = mutableListOf<Order>()
+    // Idk what else to put in for orders....
+    private fun generateOrders(page: Int, size: Int): List<Order> {
+        val orders = mutableListOf<Order>()
         val start = (page - 1) * size + 1
         val end = start + size - 1
         for (i in start..end) {
-            fakeOrders.add(Order("Order $i", "Details for order $i", "Status $i"))
+            orders.add(
+                Order(
+                    "Order $i",
+                    "Details for order $i",
+                    "Status $i"
+                )
+            )
         }
-        return fakeOrders
+        return orders
     }
 }
 
