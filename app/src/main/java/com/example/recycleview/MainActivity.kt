@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
     private val orders = mutableListOf<Order>()
     private lateinit var adapter: OrderAdapter
     private var isLoading = false
-    private var currentPage = 1
+    private var currentPage = 0
     private val pageSize = 20 // Number of orders per list
     private val threshold = 10
 
@@ -63,11 +63,13 @@ class MainActivity : AppCompatActivity() {
         isLoading = true
         // Simulate network delay
         Handler(Looper.getMainLooper()).postDelayed({
+            // Increment the current page number for the next load
+            currentPage++
+
             // Clear the current list and load new orders
             val newOrders = generateOrders(currentPage, pageSize)
             adapter.addOrders(newOrders)
-            // Increment the current page number for the next load
-            currentPage++
+
             isLoading = false
         }, 1500)
     }
