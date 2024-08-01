@@ -4,9 +4,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -32,7 +37,9 @@ class MainActivity : AppCompatActivity() {
 
         // Setting up the swipe-to-refresh listener
         swipeRefreshLayout.setOnRefreshListener {
-            refreshOrders()
+            if (!isLoading) {
+                refreshOrders()
+            }
         }
 
         // Add a scroll listener to the RecyclerView to implement load more orders
@@ -61,17 +68,14 @@ class MainActivity : AppCompatActivity() {
     // Is called when the user scrolls to the bottom of the list and more items need to be loaded
     private fun loadMoreOrders() {
         isLoading = true
-        // Simulate network delay
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Increment the current page number for the next load
-            currentPage++
 
-            // Clear the current list and load new orders
+        lifecycleScope.launch {
+            delay(1500)
             val newOrders = generateOrders(currentPage, pageSize)
             adapter.addOrders(newOrders)
-
+            currentPage++
             isLoading = false
-        }, 1500)
+        }
     }
 
     // Refresh the entire order list when user carries out a pull-to-refresh gesture
@@ -82,15 +86,26 @@ class MainActivity : AppCompatActivity() {
         currentPage = 1
 
         // Simulate network delay
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Clear the existing list of orders
-            orders.clear()
-            val newOrders = generateOrders(currentPage, pageSize)
-            adapter.clearOrders()
-            adapter.addOrders(newOrders)
-            swipeRefreshLayout.isRefreshing = false
-            isLoading = false
-        }, 1500)
+        lifecycleScope.launch {
+            delay(1500)
+            // Switch to the main thread to before performing UI updates
+            withContext(Dispatchers.Main) {
+                // Clear the orders list
+                orders.clear()
+
+                // Generate new orders
+                val newOrders = generateOrders(currentPage, pageSize)
+
+                // Update the adapter
+                adapter.clearOrders()
+                adapter.addOrders(newOrders)
+
+                // Stop the refreshing animation
+                swipeRefreshLayout.isRefreshing = false
+                isLoading = false
+            }
+
+        }
     }
 
     // Idk what else to put in for orders....
