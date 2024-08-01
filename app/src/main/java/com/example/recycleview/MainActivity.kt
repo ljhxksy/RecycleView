@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
     private val orders = mutableListOf<Order>()
     private lateinit var adapter: OrderAdapter
     private var isLoading = false
-    private var currentPage = 0
+    private var currentPage = 1
     private val pageSize = 20 // Number of orders per list
     private val threshold = 10
 
@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Stop the refreshing animation
                 swipeRefreshLayout.isRefreshing = false
+                currentPage++
                 isLoading = false
             }
 
